@@ -28,3 +28,17 @@ Follow these instructions to run the program locally.
 - [raylib](https://github.com/raysan5/raylib)
 - [audacity](https://www.audacityteam.org/)
 - [blender](https://www.blender.org/)
+
+## Improvements
+
+- [ ] check floor on start of new turn
+- [x] rotate shapes
+  - [ ] check bounds for rotation
+- [ ] snap down
+- [ ] complete row condition
+  - [ ] whoosh outward
+  - [ ] all above move down
+- [ ] fail condition
+- [ ] win state?
+- [ ] audio
+- [ ] make a beat

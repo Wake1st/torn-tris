@@ -24,6 +24,7 @@ protected:
   uint8_t x, y, up = 0;
 
   std::vector<Block *> blocks;
+  virtual void rotateBlocks() = 0;
 };
 
 class SqShape : public Shape
@@ -34,11 +35,14 @@ public:
     x = horizontal;
     y = height;
 
+    Color shapeColor = getRandColor();
+
     blocks = {
-        new Block(model, 0 + horizontal, 0 + height),
-        new Block(model, 0 + horizontal, 1 + height),
-        new Block(model, 1 + horizontal, 0 + height),
-        new Block(model, 1 + horizontal, 1 + height)};
+        new Block(model, shapeColor, (0 + horizontal) % X_CELLS, 0 + height),
+        new Block(model, shapeColor, (0 + horizontal) % X_CELLS, 1 + height),
+        new Block(model, shapeColor, (1 + horizontal) % X_CELLS, 1 + height),
+        new Block(model, shapeColor, (1 + horizontal) % X_CELLS, 0 + height),
+    };
   }
   void update(Command *command) override;
   void drop() override;
@@ -46,6 +50,9 @@ public:
   void draw3D() override;
   bool checkFloor() override;
   std::vector<Block *> getBlocks() override;
+
+private:
+  void rotateBlocks() override;
 };
 
 void SqShape::update(Command *command)
@@ -84,11 +91,17 @@ void SqShape::update(Command *command)
 
     return;
   case Command::CW:
-    up = (up - 1) % ANGLES;
-    return;
-  case Command::CCW:
     up = (up + 1) % ANGLES;
-    return;
+
+    rotateBlocks();
+    break;
+  case Command::CCW:
+    up = (up - 1) % ANGLES;
+    if (up == 255)
+      up = 3;
+
+    rotateBlocks();
+    break;
   case Command::NONE:
   default:
     return;
@@ -138,6 +151,51 @@ bool SqShape::checkFloor()
 std::vector<Block *> SqShape::getBlocks()
 {
   return blocks;
+}
+
+void SqShape::rotateBlocks()
+{
+  // hard coded is the easiest to manage
+  switch (up)
+  {
+  case 0:
+    blocks[1]->x = (x + 0) % X_CELLS;
+    blocks[1]->y = y + 1;
+    blocks[2]->x = (x + 1) % X_CELLS;
+    blocks[2]->y = y + 1;
+    blocks[3]->x = (x + 1) % X_CELLS;
+    blocks[3]->y = y + 0;
+    break;
+  case 1:
+    blocks[1]->x = (x + 1) % X_CELLS;
+    blocks[1]->y = y + 0;
+    blocks[2]->x = (x + 1) % X_CELLS;
+    blocks[2]->y = y - 1;
+    blocks[3]->x = (x + 0) % X_CELLS;
+    blocks[3]->y = y - 1;
+    break;
+  case 2:
+    blocks[1]->x = (x + 0) % X_CELLS;
+    blocks[1]->y = y - 1;
+    blocks[2]->x = (x - 1) % X_CELLS;
+    blocks[2]->y = y - 1;
+    blocks[3]->x = (x - 1) % X_CELLS;
+    blocks[3]->y = y + 0;
+    break;
+  case 3:
+    blocks[1]->x = (x - 1) % X_CELLS;
+    blocks[1]->y = y + 0;
+    blocks[2]->x = (x - 1) % X_CELLS;
+    blocks[2]->y = y + 1;
+    blocks[3]->x = (x + 0) % X_CELLS;
+    blocks[3]->y = y + 1;
+    break;
+  }
+
+  // ensure no 255
+  for (Block *block : blocks)
+    if (block->x == 255)
+      block->x = 15;
 }
 
 class HookShape : public Shape

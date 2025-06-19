@@ -21,9 +21,9 @@ Command InputHandler::handleInput()
   if (IsKeyDown(KEY_DOWN))
     return Command::DOWN;
   if (IsKeyDown(KEY_A))
-    return Command::CW;
-  if (IsKeyDown(KEY_D))
     return Command::CCW;
+  if (IsKeyDown(KEY_D))
+    return Command::CW;
 
   // nothing pressed
   return Command::NONE;

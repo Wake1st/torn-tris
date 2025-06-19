@@ -29,6 +29,7 @@ private:
   Model baseModel;
   uint8_t spawnHeight = 8;
 
+  std::vector<Block *> colliders;
   std::vector<Shape *> shapes;
   Shape *activeShape;
 
