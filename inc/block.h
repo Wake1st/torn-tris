@@ -4,6 +4,7 @@
 #include "math.h"
 #include "stdint.h"
 #include "raylib.h"
+#include "raymath.h"
 
 #include "globals.h"
 
@@ -19,7 +20,7 @@ void updateTransform(Block block)
   block.model.transform = MatrixRotateXYZ((Vector3){0.f, block.x * ANGLE_SIZE, 0.f});
 }
 
-void draw3D(Block block)
+void draw3DBlock(Block block)
 {
   float angle = block.x * ANGLE_SIZE;
   float baseX = TOWER_RADIUS * sin(angle);

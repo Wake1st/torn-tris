@@ -2,12 +2,12 @@
 #define GLOBALS_H
 
 #define COOLDOWN 0.12f
-#define ANGLE_SIZE PI * 2.f / (float)X_CELLS
 
 #define CELL_SIZE 2.f
 #define X_CELLS 16
 #define Y_CELLS 255
 #define ANGLES 4
+#define ANGLE_SIZE (PI * 2.f / (float)X_CELLS)
 
 #define TOWER_RADIUS 5.1f
 
@@ -17,13 +17,13 @@
 
 typedef enum Command
 {
-  NONE,
-  LEFT,
-  RIGHT,
-  UP,
-  DOWN,
-  CW,
-  CCW,
+  COMMAND_NONE,
+  COMMAND_LEFT,
+  COMMAND_RIGHT,
+  COMMAND_UP,
+  COMMAND_DOWN,
+  COMMAND_CW,
+  COMMAND_CCW,
 } Command;
 
 Color getRandColor()
@@ -76,6 +76,8 @@ Color getRandColor()
     return DARKBROWN;
   case 21:
     return MAGENTA;
+  default:
+    return GRAY;
   }
 }
 

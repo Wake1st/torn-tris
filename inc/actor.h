@@ -11,15 +11,12 @@
 #define SPEED 6.4f
 #define CLOSENESS 0.01f
 
-#define ANGLE_SIZE (PI * 2.f / (float)X_CELLS)
-
 typedef struct Actor
 {
   float currentAngle;
   float targetAngle;
   uint8_t currentCell;
   uint8_t targetCell;
-  float angleSize;
   bool rightward;
   bool isMoving;
 } Actor;
@@ -28,11 +25,11 @@ void setTarget(Actor *actor, Command *command)
 {
   switch (*command)
   {
-  case Command::RIGHT:
+  case COMMAND_RIGHT:
     actor->targetCell = (actor->targetCell + 1) % X_CELLS;
     actor->rightward = true;
     break;
-  case Command::LEFT:
+  case COMMAND_LEFT:
     actor->targetCell = (actor->targetCell - 1) % X_CELLS;
     if (actor->targetCell == 255)
       actor->targetCell = 15;
@@ -43,11 +40,11 @@ void setTarget(Actor *actor, Command *command)
     return;
   }
 
-  actor->targetAngle = actor->targetCell * actor->angleSize;
+  actor->targetAngle = actor->targetCell * ANGLE_SIZE;
   actor->isMoving = true;
 }
 
-void move(Actor *actor)
+void moveActor(Actor *actor)
 {
   if (actor->isMoving)
   {
@@ -83,7 +80,7 @@ void move(Actor *actor)
   }
 }
 
-void update(Actor *actor, Camera3D *camera)
+void updateActor(Actor *actor, Camera3D *camera)
 {
   if (actor->isMoving)
   {
@@ -94,7 +91,7 @@ void update(Actor *actor, Camera3D *camera)
   }
 }
 
-void draw(Actor *actor)
+void drawActor(Actor *actor)
 {
   DrawText("ACTOR", 20, 40, 40, BLACK);
 

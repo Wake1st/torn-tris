@@ -23,7 +23,7 @@ int main(void)
   Camera3D camera = {0};
   camera.position = (Vector3){0.f, CAMERA_HEIGHT, CAMERA_DIST}; // Camera position
   camera.target = (Vector3){0.f, CAMERA_TARGET, 0.f};           // Camera looking at point
-  camera.up = Vector3UnitY;                                     // Camera up vector (rotation towards target)
+  camera.up = (Vector3){0.f, 1.f, 0.f};                         // Camera up vector (rotation towards target)
   camera.fovy = 85.0f;                                          // Camera field-of-view Y
   camera.projection = CAMERA_PERSPECTIVE;                       // Camera mode type
 
@@ -31,14 +31,26 @@ int main(void)
 
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   //--------------------------------------------------------------------------------------
+  const int SPAWN_HEIGHT = 8;
   float timer = 0.f;
 
-  InputHandler *input = new InputHandler();
-  Actor *actor = new Actor();
-  Tower *tower = new Tower(actor, model);
+  Actor *actor = &(Actor){
+      .currentAngle = 0.f,
+      .targetAngle = 0.f,
+      .currentCell = 0,
+      .currentAngle = 0.f,
+      .isMoving = false,
+      .rightward = false,
+  };
+  Tower *tower = &(Tower){
+      .actor = actor,
+      .baseModel = model,
+      .spawnHeight = SPAWN_HEIGHT,
+      .timer = DROP_TICK,
+  };
 
   // start the game already!
-  spawn(tower);
+  spawnShape(tower);
 
   // Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -47,26 +59,26 @@ int main(void)
     //----------------------------------------------------------------------------------
     timer -= GetFrameTime();
 
-    Command cmd = input->handleInput();
-    if (cmd != Command::NONE)
+    Command cmd = handleInput();
+    if (cmd != COMMAND_NONE)
     {
       // check the timer
       if (timer <= 0.f)
       {
         timer = COOLDOWN;
 
-        if (update(tower & cmd))
+        if (updateTower(tower, &cmd))
         {
-          actor->setTarget(&cmd);
+          setTarget(actor, &cmd);
         }
       }
     }
 
-    actor->move();
-    actor->update(&camera);
+    moveActor(actor);
+    updateTower(tower, &cmd);
 
     // passed when hits "floor"
-    if (drop(tower))
+    if (dropTower(tower))
     {
       if (checkLoose(tower))
       {
@@ -79,7 +91,7 @@ int main(void)
       else
       {
         // start a new shape
-        spawn(tower);
+        spawnShape(tower);
       }
     }
 
@@ -91,7 +103,7 @@ int main(void)
 
     BeginMode3D(camera);
 
-    draw3D(tower);
+    draw3DTower(tower);
     DrawGrid(20, 10.0f); // Draw a grid
 
     EndMode3D();
@@ -99,7 +111,7 @@ int main(void)
     DrawText("Its tetris in towers!", screenWidth - 200, screenHeight - 20, 10, GRAY);
 
     // actor->draw();
-    draw(tower);
+    drawTower(tower);
     DrawFPS(10, 10);
 
     EndDrawing();
