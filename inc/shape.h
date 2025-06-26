@@ -1,8 +1,7 @@
-#ifndef SHAPE
-#define SHAPE
+#ifndef SHAPE_H
+#define SHAPE_H
 
-#include <cstdint>
-#include <vector>
+#include "stdint.h"
 #include "raylib.h"
 
 #include "globals.h"
@@ -10,297 +9,335 @@
 
 #define BLOCK_COUNT 4
 
-class Shape
+typedef enum shapes
 {
-public:
-  virtual void update(Command *command) = 0;
-  virtual void drop() = 0;
-  virtual void draw() = 0;
-  virtual void draw3D() = 0;
-  virtual bool checkFloor() = 0;
-  virtual std::vector<Block *> getBlocks() = 0;
+  T,
+  L,
+  Z,
+  S,
+  LINE,
+  SQUARE,
+} Shapes;
 
-protected:
-  uint8_t x, y, up = 0;
-
-  std::vector<Block *> blocks;
-  virtual void rotateBlocks() = 0;
-};
-
-class SqShape : public Shape
+typedef struct Shape
 {
-public:
-  SqShape(Model model, uint8_t horizontal, uint8_t height)
+  Shapes shape;
+  uint8_t x, y, up;
+  Block *blocks[BLOCK_COUNT];
+} Shape;
+
+Shape *InitShape(Shapes shapes, Model model, uint8_t horizontal, uint8_t height)
+{
+  Color shapeColor = getRandColor();
+
+  switch (shapes)
   {
-    x = horizontal;
-    y = height;
-
-    Color shapeColor = getRandColor();
-
-    blocks = {
-        new Block(model, shapeColor, (0 + horizontal) % X_CELLS, 0 + height),
-        new Block(model, shapeColor, (0 + horizontal) % X_CELLS, 1 + height),
-        new Block(model, shapeColor, (1 + horizontal) % X_CELLS, 1 + height),
-        new Block(model, shapeColor, (1 + horizontal) % X_CELLS, 0 + height),
-    };
+  case Shapes::SQUARE:
+    return InitSqShape(model, horizontal, height);
   }
-  void update(Command *command) override;
-  void drop() override;
-  void draw() override;
-  void draw3D() override;
-  bool checkFloor() override;
-  std::vector<Block *> getBlocks() override;
+}
 
-private:
-  void rotateBlocks() override;
-};
+void update(Shape *shape, Command *command)
+{
+  switch (shape->shape)
+  {
+  case Shapes::SQUARE:
+    return updateSqShape(shape, command);
+  }
+}
 
-void SqShape::update(Command *command)
+void drop(Shape *shape)
+{
+  shape->y--;
+
+  for (int i = 0; i < BLOCK_COUNT; i++)
+    shape->blocks[i]->y--;
+}
+
+void draw(Shape *shape)
+{
+  DrawText("Shape", 20, 40, 40, BLACK);
+
+  DrawText(TextFormat("X:\t%i", shape->x), 20, 80, 20, DARKPURPLE);
+  DrawText(TextFormat("Y:\t%i", shape->y), 20, 100, 20, DARKPURPLE);
+  DrawText(TextFormat("UP:\t%i", shape->up), 20, 120, 20, DARKPURPLE);
+
+  DrawText(TextFormat("Angle:\t%f", ANGLE_SIZE), 20, 140, 20, DARKPURPLE);
+}
+
+void draw3D(Shape *shape)
+{
+  for (int i = 0; i < BLOCK_COUNT; i++)
+    draw3D(*shape->blocks[i]);
+}
+
+bool checkFloor(Shape *shape)
+{
+  switch (shape->shape)
+  {
+  case Shapes::SQUARE:
+    // first, check for floor
+    if (shape->y == 0)
+    {
+      return true;
+    }
+
+    return false;
+  }
+}
+
+Block *getBlocks(Shape *shape)
+{
+  return shape->blocks;
+}
+
+Shape *InitSqShape(Model model, uint8_t horizontal, uint8_t height)
+{
+  Color shapeColor = getRandColor();
+
+  return &(Shape){
+      .shape = Shapes::SQUARE,
+      .x = horizontal,
+      .y = height,
+      .blocks = {
+          new (Block){model, shapeColor, (uint8_t)((0 + horizontal) % X_CELLS), (uint8_t)(0 + height)},
+          new (Block){model, shapeColor, (uint8_t)((0 + horizontal) % X_CELLS), (uint8_t)(1 + height)},
+          new (Block){model, shapeColor, (uint8_t)((1 + horizontal) % X_CELLS), (uint8_t)(1 + height)},
+          new (Block){model, shapeColor, (uint8_t)((1 + horizontal) % X_CELLS), (uint8_t)(0 + height)},
+      },
+  };
+}
+
+void updateSqShape(Shape *shape, Command *command)
 {
   // spin, slide, or shift down
   switch (*command)
   {
   case Command::RIGHT:
-    x = (x + 1) % X_CELLS;
+  {
 
-    for (Block *block : blocks)
-      block->x = (block->x + 1) % X_CELLS;
+    shape->x = (shape->x + 1) % X_CELLS;
 
-    break;
-  case Command::LEFT:
-    x = (x - 1) % X_CELLS;
-    if (x == 255)
-      x = 15;
-
-    for (Block *block : blocks)
+    for (int i = 0; i < BLOCK_COUNT; i++)
     {
-      block->x = (block->x - 1) % X_CELLS;
-      if (block->x == 255)
-        block->x = 15;
+      shape->x = (shape->x + 1) % X_CELLS;
     }
 
     break;
+  }
+  case Command::LEFT:
+  {
+    shape->x = (shape->x - 1) % X_CELLS;
+    if (shape->x == 255)
+    {
+      shape->x = 15;
+    }
+
+    for (int i = 0; i < BLOCK_COUNT; i++)
+    {
+      block->x = (block->x - 1) % X_CELLS;
+      if (block->x == 255)
+      {
+        block->x = 15;
+      }
+    }
+
+    break;
+  }
   case Command::UP:
+  {
     // instantly go down
     return;
+  }
   case Command::DOWN:
-    y--;
+  {
 
-    for (Block *block : blocks)
+    shape->y--;
+
+    for (int i = 0; i < BLOCK_COUNT; i++)
+    {
       block->y--;
+    }
 
     return;
+  }
   case Command::CW:
-    up = (up + 1) % ANGLES;
+  {
+    shape->up = (shape->up + 1) % ANGLES;
 
-    rotateBlocks();
+    rotateSqBlocks(shape);
     break;
+  }
   case Command::CCW:
-    up = (up - 1) % ANGLES;
-    if (up == 255)
-      up = 3;
+  {
 
-    rotateBlocks();
+    shape->up = (shape->up - 1) % ANGLES;
+    if (shape->up == 255)
+      shape->up = 3;
+
+    rotateSqBlocks(shape);
     break;
+  }
   case Command::NONE:
   default:
     return;
   }
 
   // modify model
-  for (Block *block : blocks)
-    block->updateTransform();
-}
-
-void SqShape::drop()
-{
-  y--;
-
-  for (Block *block : blocks)
-    block->y--;
-}
-
-void SqShape::draw()
-{
-  DrawText("SqShape", 20, 40, 40, BLACK);
-
-  DrawText(TextFormat("X:\t%i", x), 20, 80, 20, DARKPURPLE);
-  DrawText(TextFormat("Y:\t%i", y), 20, 100, 20, DARKPURPLE);
-  DrawText(TextFormat("UP:\t%i", up), 20, 120, 20, DARKPURPLE);
-
-  DrawText(TextFormat("Angle:\t%f", ANGLE_SIZE), 20, 140, 20, DARKPURPLE);
-}
-
-void SqShape::draw3D()
-{
-  for (Block *block : blocks)
-    block->draw3D();
-}
-
-bool SqShape::checkFloor()
-{
-  // first, check for floor
-  if (y == 0)
+  for (int i = 0; i < BLOCK_COUNT; i++)
   {
-    return true;
+    updateTransform(*shape->blocks[i]);
   }
-
-  return false;
 }
 
-std::vector<Block *> SqShape::getBlocks()
-{
-  return blocks;
-}
-
-void SqShape::rotateBlocks()
+void rotateSqBlocks(Shape *shape)
 {
   // hard coded is the easiest to manage
-  switch (up)
+  switch (shape->up)
   {
   case 0:
-    blocks[1]->x = (x + 0) % X_CELLS;
-    blocks[1]->y = y + 1;
-    blocks[2]->x = (x + 1) % X_CELLS;
-    blocks[2]->y = y + 1;
-    blocks[3]->x = (x + 1) % X_CELLS;
-    blocks[3]->y = y + 0;
+    shape->blocks[1]->x = (shape->x + 0) % X_CELLS;
+    shape->blocks[1]->y = shape->y + 1;
+    shape->blocks[2]->x = (shape->x + 1) % X_CELLS;
+    shape->blocks[2]->y = shape->y + 1;
+    shape->blocks[3]->x = (shape->x + 1) % X_CELLS;
+    shape->blocks[3]->y = shape->y + 0;
     break;
   case 1:
-    blocks[1]->x = (x + 1) % X_CELLS;
-    blocks[1]->y = y + 0;
-    blocks[2]->x = (x + 1) % X_CELLS;
-    blocks[2]->y = y - 1;
-    blocks[3]->x = (x + 0) % X_CELLS;
-    blocks[3]->y = y - 1;
+    shape->blocks[1]->x = (shape->x + 1) % X_CELLS;
+    shape->blocks[1]->y = shape->y + 0;
+    shape->blocks[2]->x = (shape->x + 1) % X_CELLS;
+    shape->blocks[2]->y = shape->y - 1;
+    shape->blocks[3]->x = (shape->x + 0) % X_CELLS;
+    shape->blocks[3]->y = shape->y - 1;
     break;
   case 2:
-    blocks[1]->x = (x + 0) % X_CELLS;
-    blocks[1]->y = y - 1;
-    blocks[2]->x = (x - 1) % X_CELLS;
-    blocks[2]->y = y - 1;
-    blocks[3]->x = (x - 1) % X_CELLS;
-    blocks[3]->y = y + 0;
+    shape->blocks[1]->x = (shape->x + 0) % X_CELLS;
+    shape->blocks[1]->y = shape->y - 1;
+    shape->blocks[2]->x = (shape->x - 1) % X_CELLS;
+    shape->blocks[2]->y = shape->y - 1;
+    shape->blocks[3]->x = (shape->x - 1) % X_CELLS;
+    shape->blocks[3]->y = shape->y + 0;
     break;
   case 3:
-    blocks[1]->x = (x - 1) % X_CELLS;
-    blocks[1]->y = y + 0;
-    blocks[2]->x = (x - 1) % X_CELLS;
-    blocks[2]->y = y + 1;
-    blocks[3]->x = (x + 0) % X_CELLS;
-    blocks[3]->y = y + 1;
+    shape->blocks[1]->x = (shape->x - 1) % X_CELLS;
+    shape->blocks[1]->y = shape->y + 0;
+    shape->blocks[2]->x = (shape->x - 1) % X_CELLS;
+    shape->blocks[2]->y = shape->y + 1;
+    shape->blocks[3]->x = (shape->x + 0) % X_CELLS;
+    shape->blocks[3]->y = shape->y + 1;
     break;
   }
 
   // ensure no 255
-  for (Block *block : blocks)
-    if (block->x == 255)
-      block->x = 15;
+  for (int i = 0; i < BLOCK_COUNT; i++)
+    if (shape->blocks[i]->x == 255)
+      shape->blocks[i]->x = 15;
 }
 
-class HookShape : public Shape
-{
-public:
-  void update(Command *command) override;
-  void draw3D() override;
-  bool checkFloor() override;
-};
+// class HookShape : public Shape
+// {
+// public:
+//   void shape->date(Command *command) override;
+//   void draw3D() override;
+//   bool checkFloor() override;
+// };
 
-void HookShape::update(Command *command)
-{
-}
+// void HookShape::update(Command *command)
+// {
+// }
 
-void HookShape::draw3D()
-{
-}
+// void HookShape::draw3D()
+// {
+// }
 
-bool HookShape::checkFloor()
-{
-  return false;
-}
+// bool HookShape::checkFloor()
+// {
+//   return false;
+// }
 
-class TShape : public Shape
-{
-public:
-  void update(Command *command) override;
-  void draw3D() override;
-  bool checkFloor() override;
-};
+// class TShape : public Shape
+// {
+// public:
+//   void update(Command *command) override;
+//   void draw3D() override;
+//   bool checkFloor() override;
+// };
 
-void TShape::update(Command *command)
-{
-}
+// void TShape::update(Command *command)
+// {
+// }
 
-void TShape::draw3D()
-{
-}
+// void TShape::draw3D()
+// {
+// }
 
-bool TShape::checkFloor()
-{
-  return false;
-}
+// bool TShape::checkFloor()
+// {
+//   return false;
+// }
 
-class LineShape : public Shape
-{
-public:
-  void update(Command *command) override;
-  void draw3D() override;
-  bool checkFloor() override;
-};
+// class LineShape : public Shape
+// {
+// public:
+//   void update(Command *command) override;
+//   void draw3D() override;
+//   bool checkFloor() override;
+// };
 
-void LineShape::update(Command *command)
-{
-}
+// void LineShape::update(Command *command)
+// {
+// }
 
-void LineShape::draw3D()
-{
-}
+// void LineShape::draw3D()
+// {
+// }
 
-bool LineShape::checkFloor()
-{
-  return false;
-}
+// bool LineShape::checkFloor()
+// {
+//   return false;
+// }
 
-class ZShape : public Shape
-{
-public:
-  void update(Command *command) override;
-  void draw3D() override;
-  bool checkFloor() override;
-};
+// class ZShape : public Shape
+// {
+// public:
+//   void update(Command *command) override;
+//   void draw3D() override;
+//   bool checkFloor() override;
+// };
 
-void ZShape::update(Command *command)
-{
-}
+// void ZShape::update(Command *command)
+// {
+// }
 
-void ZShape::draw3D()
-{
-}
+// void ZShape::draw3D()
+// {
+// }
 
-bool ZShape::checkFloor()
-{
-  return false;
-}
+// bool ZShape::checkFloor()
+// {
+//   return false;
+// }
 
-class SShape : public Shape
-{
-public:
-  void update(Command *command) override;
-  void draw3D() override;
-  bool checkFloor() override;
-};
+// class SShape : public Shape
+// {
+// public:
+//   void update(Command *command) override;
+//   void draw3D() override;
+//   bool checkFloor() override;
+// };
 
-void SShape::update(Command *command)
-{
-}
+// void SShape::update(Command *command)
+// {
+// }
 
-void SShape::draw3D()
-{
-}
+// void SShape::draw3D()
+// {
+// }
 
-bool SShape::checkFloor()
-{
-  return false;
-}
+// bool SShape::checkFloor()
+// {
+//   return false;
+// }
 
 #endif

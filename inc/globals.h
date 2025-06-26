@@ -1,5 +1,5 @@
-#ifndef GLOBALS
-#define GLOBALS
+#ifndef GLOBALS_H
+#define GLOBALS_H
 
 #define COOLDOWN 0.12f
 #define ANGLE_SIZE PI * 2.f / (float)X_CELLS

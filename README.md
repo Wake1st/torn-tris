@@ -32,7 +32,12 @@ Follow these instructions to run the program locally.
 ## Improvements
 
 - [ ] check floor on start of new turn
-- [x] rotate shapes
+- [] rotate shapes
+  - [x] square
+  - [ ] line
+  - [ ] hook
+  - [ ] z
+  - [ ] s
   - [ ] check bounds for rotation
 - [ ] snap down
 - [ ] complete row condition

@@ -1,137 +1,113 @@
-#ifndef TOWER
-#define TOWER
+#ifndef TOWER_H
+#define TOWER_H
 
-#include <iostream>
-#include <cstdint>
-#include <vector>
+#include "stdint.h"
 #include "raylib.h"
 
 #include "globals.h"
 #include "shape.h"
 #include "actor.h"
 
-#define DROP_TICK 1.2f;
+#define DROP_TICK 1.2f
+#define COLLIDER_COUNT 256
+#define SHAPE_COUNT 256
 
-class Tower
+typedef struct Tower
 {
-public:
-  Tower(Actor *actor, Model model);
-  void spawn();
-  bool update(Command *command);
-  bool checkLoose();
-  bool checkFullLine();
-  bool drop();
-  void draw();
-  void draw3D();
-
-private:
   Actor *actor;
   Model baseModel;
-  uint8_t spawnHeight = 8;
-
-  std::vector<Block *> colliders;
-  std::vector<Shape *> shapes;
+  uint8_t spawnHeight;
+  Block *colliders[COLLIDER_COUNT];
+  Shape *shapes[SHAPE_COUNT];
   Shape *activeShape;
+  float timer;
+} Tower;
 
-  float timer = 0.f;
-
-  bool leftCheck(Shape *checking);
-  bool rightCheck(Shape *checking);
-  bool fallingCheck(Shape *checking);
-};
-
-Tower::Tower(Actor *act, Model model)
+void spawn(Tower *tower)
 {
-  actor = act;
-  baseModel = model;
-  shapes = std::vector<Shape *>();
+  tower->activeShape = InitShape(Shapes::SQUARE, tower->baseModel, tower->actor->currentCell, tower->spawnHeight);
 }
 
-void Tower::spawn()
-{
-  activeShape = new SqShape(baseModel, actor->getHorizontal(), spawnHeight);
-}
-
-bool Tower::update(Command *command)
+bool update(Tower *tower, Command *command)
 {
   // before we go, we must check our sides
-  if (*command == Command::LEFT && Tower::leftCheck(activeShape))
+  if (*command == Command::LEFT && leftCheck(tower))
   {
     return false;
   }
-  else if (*command == Command::RIGHT && Tower::rightCheck(activeShape))
+  else if (*command == Command::RIGHT && rightCheck(tower))
   {
     return false;
   }
   else
   {
-    activeShape->update(command);
+    update(tower->activeShape, command);
     return true;
   }
 }
 
-bool Tower::checkLoose()
+bool checkLoose(Tower *tower)
 {
   return false;
 }
 
-bool Tower::checkFullLine()
+bool checkFullLine(Tower *tower)
 {
   return false;
 }
 
-bool Tower::drop()
+bool drop(Tower *tower)
 {
   // move shape down
-  timer -= GetFrameTime();
+  tower->timer -= GetFrameTime();
 
-  if (timer <= 0.f)
+  if (tower->timer <= 0.f)
   {
-    timer = DROP_TICK;
-    activeShape->drop();
+    tower->timer = DROP_TICK;
+    drop(tower->activeShape);
   }
 
   // collision check
-  bool hitFloor = activeShape->checkFloor();
-  bool collision = Tower::fallingCheck(activeShape);
+  bool hitFloor = checkFloor(tower->activeShape);
+  bool collision = fallingCheck(tower);
   if (hitFloor || collision)
   {
-    shapes.push_back(activeShape);
+    tower->shapes.push_back(tower->activeShape);
     return true;
   }
 
   return false;
 }
 
-void Tower::draw()
+void draw(Tower *tower)
 {
-  activeShape->draw();
+  draw(tower->activeShape);
 
-  for (Shape *shape : shapes)
+  for (Shape *shape : tower->shapes)
   {
-    shape->draw();
+    draw(shape);
   }
 }
 
-void Tower::draw3D()
+void draw3D(Tower *tower)
 {
-  activeShape->draw3D();
+  draw3D(tower->activeShape);
 
-  for (Shape *shape : shapes)
+  for (Shape *shape : tower->shapes)
   {
-    shape->draw3D();
+    draw3D(shape);
   }
 }
 
-bool Tower::leftCheck(Shape *checking)
+bool leftCheck(Tower *tower)
 {
 
-  for (Block *block : checking->getBlocks())
+  for (Block *block : getBlocks(tower->activeShape))
   {
     uint8_t checkLeft = ((uint8_t)block->x - 1) % X_CELLS;
-    for (Shape *shape : shapes)
+    for (Shape *shape : tower->shapes)
     {
-      for (Block *shapeBlock : shape->getBlocks())
+      for (Block *shapeBlock : getBlocks(shape))
       {
         if (block->y == shapeBlock->y && checkLeft == shapeBlock->x)
         {
@@ -144,14 +120,14 @@ bool Tower::leftCheck(Shape *checking)
   return false;
 }
 
-bool Tower::rightCheck(Shape *checking)
+bool rightCheck(Tower *tower)
 {
-  for (Block *block : checking->getBlocks())
+  for (Block *block : getBlocks(tower->activeShape))
   {
     uint8_t checkRight = ((uint8_t)block->x + 1) % X_CELLS;
-    for (Shape *shape : shapes)
+    for (Shape *shape : tower->shapes)
     {
-      for (Block *shapeBlock : shape->getBlocks())
+      for (Block *shapeBlock : getBlocks(shape))
       {
         if (block->y == shapeBlock->y && checkRight == shapeBlock->x)
         {
@@ -164,13 +140,13 @@ bool Tower::rightCheck(Shape *checking)
   return false;
 }
 
-bool Tower::fallingCheck(Shape *checking)
+bool fallingCheck(Tower *tower)
 {
-  for (Block *checkBlock : checking->getBlocks())
+  for (Block *checkBlock : getBlocks(tower->activeShape))
   {
-    for (Shape *shape : shapes)
+    for (Shape *shape : tower->shapes)
     {
-      for (Block *shapeBlock : shape->getBlocks())
+      for (Block *shapeBlock : getBlocks(shape))
       {
         if (checkBlock->x == shapeBlock->x && checkBlock->y == shapeBlock->y + 1)
         {

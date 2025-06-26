@@ -1,46 +1,31 @@
-#ifndef BLOCK
-#define BLOCK
+#ifndef BLOCK_H
+#define BLOCK_H
 
-#include <cmath>
-#include <cstdint>
+#include "math.h"
+#include "stdint.h"
 #include "raylib.h"
 
 #include "globals.h"
 
-class Block
+typedef struct Block
 {
-public:
-  uint8_t x, y;
-
-  Block(Model baseModel, Color shapeColor, uint8_t x_, uint8_t y_)
-  {
-    model = baseModel;
-    color = shapeColor;
-    x = x_;
-    y = y_;
-
-    Block::updateTransform();
-  }
-  void updateTransform();
-  void draw3D();
-
-private:
   Model model;
   Color color;
-};
+  uint8_t x, y;
+} Block;
 
-void Block::updateTransform()
+void updateTransform(Block block)
 {
-  model.transform = MatrixRotateXYZ((Vector3){0.f, x * ANGLE_SIZE, 0.f});
+  block.model.transform = MatrixRotateXYZ((Vector3){0.f, block.x * ANGLE_SIZE, 0.f});
 }
 
-void Block::draw3D()
+void draw3D(Block block)
 {
-  float angle = x * ANGLE_SIZE;
-  float baseX = TOWER_RADIUS * std::sin(angle);
-  float baseY = TOWER_RADIUS * std::cos(angle);
-  float height = y * CELL_SIZE;
-  DrawModel(model, (Vector3){baseX, height, baseY}, 1.0, color);
+  float angle = block.x * ANGLE_SIZE;
+  float baseX = TOWER_RADIUS * sin(angle);
+  float baseY = TOWER_RADIUS * cos(angle);
+  float height = block.y * CELL_SIZE;
+  DrawModel(block.model, (Vector3){baseX, height, baseY}, 1.0, block.color);
 }
 
 #endif

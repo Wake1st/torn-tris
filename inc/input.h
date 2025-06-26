@@ -1,16 +1,11 @@
-#ifndef INPUT
-#define INPUT
+#ifndef INPUT_H
+#define INPUT_H
 
 #include "raylib.h"
+
 #include "globals.h"
 
-class InputHandler
-{
-public:
-  Command handleInput();
-};
-
-Command InputHandler::handleInput()
+Command handleInput()
 {
   if (IsKeyDown(KEY_RIGHT))
     return Command::RIGHT;

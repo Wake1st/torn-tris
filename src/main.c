@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 
 #include "globals.h"
 #include "input.h"
@@ -19,7 +20,7 @@ int main(void)
   SetWindowMonitor(0);
 
   // Define the camera to look into our 3d world
-  Camera camera = {0};
+  Camera3D camera = {0};
   camera.position = (Vector3){0.f, CAMERA_HEIGHT, CAMERA_DIST}; // Camera position
   camera.target = (Vector3){0.f, CAMERA_TARGET, 0.f};           // Camera looking at point
   camera.up = Vector3UnitY;                                     // Camera up vector (rotation towards target)
@@ -37,7 +38,7 @@ int main(void)
   Tower *tower = new Tower(actor, model);
 
   // start the game already!
-  tower->spawn();
+  spawn(tower);
 
   // Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -54,7 +55,7 @@ int main(void)
       {
         timer = COOLDOWN;
 
-        if (tower->update(&cmd))
+        if (update(tower & cmd))
         {
           actor->setTarget(&cmd);
         }
@@ -65,20 +66,20 @@ int main(void)
     actor->update(&camera);
 
     // passed when hits "floor"
-    if (tower->drop())
+    if (drop(tower))
     {
-      if (tower->checkLoose())
+      if (checkLoose(tower))
       {
         // end level
       }
-      else if (tower->checkFullLine())
+      else if (checkFullLine(tower))
       {
         // remove line!
       }
       else
       {
         // start a new shape
-        tower->spawn();
+        spawn(tower);
       }
     }
 
@@ -90,7 +91,7 @@ int main(void)
 
     BeginMode3D(camera);
 
-    tower->draw3D();
+    draw3D(tower);
     DrawGrid(20, 10.0f); // Draw a grid
 
     EndMode3D();
@@ -98,7 +99,7 @@ int main(void)
     DrawText("Its tetris in towers!", screenWidth - 200, screenHeight - 20, 10, GRAY);
 
     // actor->draw();
-    tower->draw();
+    draw(tower);
     DrawFPS(10, 10);
 
     EndDrawing();
